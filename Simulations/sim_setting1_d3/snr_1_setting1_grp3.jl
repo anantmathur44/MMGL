@@ -1,8 +1,7 @@
 # Import necessary modules
 using JLD, LinearAlgebra, DelimitedFiles, Roots, Statistics, Distributions, IterativeSolvers, LinearMaps, Random
+
 include("functions.jl")
-
-
 
 function main()
     # SIMULATED DATA
@@ -19,7 +18,7 @@ function main()
     nsim = 50
     ngrid = 100
 
-    c  = size(rhos)[1]
+    c = size(rhos)[1]
 
     grpsizes = grpsize * ones(m)  # Array of partition sizes
     global grpsizes = Int.(grpsizes)
@@ -57,21 +56,20 @@ function main()
                 Rs[i] = QRd.R
             end
             Zqall = reduce(hcat, Zq)
-            maxl = round(maximum([norm(Zq[j]' * y)/(sqrt(grpsize)) for j in 1:m]), digits = 2)
+            maxl = round(maximum([norm(Zq[j]' * y) / (sqrt(grpsize)) for j in 1:m]), digits = 2)
             minl = maxl * 0.01
             lamrange = exp.(range(log(minl), log(maxl), length = ngrid))
             lamrange = reverse(lamrange)
 
             funtolall = 1e-5
-            
+
             iters, actives, theta_mm, times_mm, gamma_mm = group_lasso_mm(y, Zqall; verbose = false, maxiter = 20 * 10^3, funtol = funtolall, m = m, lambdas = lamrange, indxs = indxs, grpsizes = grpsizes)
 
             iters_bcd, actives_bcd, theta_bcd, times_bcd = group_lasso_bcd(y, Zq, Zqall; verbose = false, maxiter = 50000, funtol = funtolall, lambdas = lamrange, indxs = indxs, grpsizes = grpsizes)
 
-            writedlm("rho_"*string(rho)*"_psi_"*string(psi)*"_sim_" * string(isim) * ".csv", [times_mm times_bcd iters[:, 1] iters_bcd[:, 1]], ",")
+            writedlm("rho_" * string(rho) * "_psi_" * string(psi) * "_sim_" * string(isim) * ".csv", [times_mm times_bcd iters[:, 1] iters_bcd[:, 1]], ",")
         end
     end
 end
 
-# Call the main function
 main()

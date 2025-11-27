@@ -1,12 +1,12 @@
-
 # Import necessary modules
 import Pkg; Pkg.add("JLD");Pkg.add("LinearAlgebra"), Pkg.add("DelimitedFiles"), Pkg.add("IterativeSolvers"), Pkg.add("Roots"), Pkg.add("SplitApplyCombine"),  Pkg.add("Distributions"), Pkg.add("LinearMaps"), Pkg.add("Random"),Pkg.add("CSV"),Pkg.add("DataFrames")
 using JLD, LinearAlgebra, DelimitedFiles, Roots, Statistics, Distributions, IterativeSolvers, LinearMaps, Random
+
 include("functions.jl")
 
 function main()
     Random.seed!(2)
-   
+
     n = 1000
     grpsize = 3
     global m = 1000
@@ -16,7 +16,7 @@ function main()
     SNR = 1
     nsim = 50
     ngrid = 100
-    c  = size(rhos)[1]
+    c = size(rhos)[1]
 
     grpsizes = grpsize * ones(m)  # Array of partition sizes
     global grpsizes = Int.(grpsizes)
@@ -54,16 +54,16 @@ function main()
             Rs[i] = QRd.R
         end
         Zqall = reduce(hcat, Zq)
-        maxl = round(maximum([norm(Zq[j]' * y)/(sqrt(grpsize)) for j in 1:m]), digits = 2)
+        maxl = round(maximum([norm(Zq[j]' * y) / (sqrt(grpsize)) for j in 1:m]), digits = 2)
         minl = maxl * 0.01
         lamrange = exp.(range(log(minl), log(maxl), length = ngrid))
         lamrange = reverse(lamrange)
         funtolall = 1e-5
-        iters, actives, theta_mm, times_mm, gamma_mm = group_lasso_mm(y, Zqall; verbose =false, maxiter = 20 * 10^3, funtol = funtolall, m = m, lambdas = lamrange, indxs = indxs, grpsizes = grpsizes)
-        iters_bcd, actives_bcd, theta_bcd, times_bcd = group_lasso_bcd(y, Zq, Zqall; verbose =false, maxiter = 50000, funtol = funtolall, lambdas = lamrange, indxs = indxs, grpsizes = grpsizes)
+        iters, actives, theta_mm, times_mm, gamma_mm = group_lasso_mm(y, Zqall; verbose = false, maxiter = 20 * 10^3, funtol = funtolall, m = m, lambdas = lamrange, indxs = indxs, grpsizes = grpsizes)
+        iters_bcd, actives_bcd, theta_bcd, times_bcd = group_lasso_bcd(y, Zq, Zqall; verbose = false, maxiter = 50000, funtol = funtolall, lambdas = lamrange, indxs = indxs, grpsizes = grpsizes)
         test_error = zeros(ngrid)
         for k in 1:ngrid
-            test_error[k] = norm(Zall*(betasall'-theta_to_beta(theta_mm[:,k],Rs,m,grpsize)))
+            test_error[k] = norm(Zall * (betasall' - theta_to_beta(theta_mm[:, k], Rs, m, grpsize)))
         end
         writedlm("path_" * string(isim) * ".csv", [cumsum(iters) cumsum(iters_bcd) cumsum(times_mm) cumsum(times_bcd) lamrange test_error], ",")
     end

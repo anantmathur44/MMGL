@@ -1,29 +1,16 @@
 # Import necessary modules
-import Pkg; Pkg.add("JLD");Pkg.add("LinearAlgebra"), Pkg.add("DelimitedFiles"), Pkg.add("IterativeSolvers"), Pkg.add("Roots"), Pkg.add("SplitApplyCombine"),  Pkg.add("Distributions"), Pkg.add("LinearMaps"), Pkg.add("Random")
 using JLD, LinearAlgebra, DelimitedFiles, Roots, Statistics, Distributions, IterativeSolvers, LinearMaps, Random
+
 include("functions.jl")
-
-function center_columns_matrix_array(Z_array::Vector{Matrix{Float64}})
-    Z_centered_array = [center_columns(Z) for Z in Z_array]
-    return Z_centered_array
-end
-
-function center_columns(Z::Matrix)
-    col_means = mean(Z, dims=1)
-    Z_centered = Z .- col_means
-    return Z_centered
-end
-
 
 function main()
     # SIMULATED DATA
-    
-    
+    Random.seed!(2)
+
     n = 1000
     grpsize = 5
     global m = 600
     k = 60
-    Random.seed!(2)
 
     rhos = [0.3, 0.6, 0.9]
     psis = [0.3, 0.6, 0.9]
@@ -31,7 +18,7 @@ function main()
     nsim = 50
     ngrid = 100
 
-    c  = size(rhos)[1]
+    c = size(rhos)[1]
 
     grpsizes = grpsize * ones(m)  # Array of partition sizes
     global grpsizes = Int.(grpsizes)
@@ -69,22 +56,20 @@ function main()
                 Rs[i] = QRd.R
             end
             Zqall = reduce(hcat, Zq)
-            maxl = round(maximum([norm(Zq[j]' * y)/(sqrt(grpsize)) for j in 1:m]), digits = 2)
-            # minl = maxl*1e-04
+            maxl = round(maximum([norm(Zq[j]' * y) / (sqrt(grpsize)) for j in 1:m]), digits = 2)
             minl = maxl * 0.01
             lamrange = exp.(range(log(minl), log(maxl), length = ngrid))
             lamrange = reverse(lamrange)
 
             funtolall = 1e-5
-            
+
             iters, actives, theta_mm, times_mm, gamma_mm = group_lasso_mm(y, Zqall; verbose = false, maxiter = 20 * 10^3, funtol = funtolall, m = m, lambdas = lamrange, indxs = indxs, grpsizes = grpsizes)
 
             iters_bcd, actives_bcd, theta_bcd, times_bcd = group_lasso_bcd(y, Zq, Zqall; verbose = false, maxiter = 50000, funtol = funtolall, lambdas = lamrange, indxs = indxs, grpsizes = grpsizes)
 
-            writedlm("rho_"*string(rho)*"_psi_"*string(psi)*"_sim_" * string(isim) * ".csv", [times_mm times_bcd iters[:, 1] iters_bcd[:, 1]], ",")
+            writedlm("rho_" * string(rho) * "_psi_" * string(psi) * "_sim_" * string(isim) * ".csv", [times_mm times_bcd iters[:, 1] iters_bcd[:, 1]], ",")
         end
     end
 end
 
-# Call the main function
 main()
